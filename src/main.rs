@@ -36,7 +36,10 @@ fn main() {
         {
             router!(request,
                 (GET) (/dashboard) => {
-                    manager.dashboard()
+                    Response::html(manager.dashboard_html())
+                },
+                (GET) (/{date: String}) => {
+                    manager.entry_for_date(date)
                 },
                 _ => {
                     let response = rouille::match_assets(&request, config::JOURNAL_PATH);
@@ -44,10 +47,7 @@ fn main() {
                         response
                     }
                     else {
-                    Response::html(
-                        "404 error.",
-                    )
-                    .with_status_code(404)
+                        manager.response_404()
                     }
                 }
             )
@@ -56,8 +56,17 @@ fn main() {
 }
 
 impl Manager {
-    fn dashboard(&self) -> Response {
-        Response::html(self.dashboard_html())
+    fn response_404(&self) -> Response {
+        Response::html("404 error.").with_status_code(404)
+    }
+
+    fn entry_for_date(&self, date: String) -> Response {
+        let entry = self.entries.get_by_date(date);
+        if let Some(entry) = entry {
+            Response::html(self.entry_html(entry))
+        } else {
+            self.response_404()
+        }
     }
 
     fn dashboard_html(&self) -> String {
@@ -84,6 +93,11 @@ impl Manager {
         );
         context.insert("date", &entry.date_str());
         context.insert("pics", &self.pics_html(entry));
+        let prev = self.entries.prev(entry);
+        let next = self.entries.next(entry);
+        context.insert("link_entry", &self.entry_link(entry));
+        context.insert("link_prev", &self.entry_link(prev.unwrap_or(entry)));
+        context.insert("link_next", &self.entry_link(next.unwrap_or(entry)));
         self.tera.render("entry.html", &context).unwrap()
     }
 
@@ -102,5 +116,9 @@ impl Manager {
                 .collect::<Vec<_>>()
                 .join("\n")
         }
+    }
+
+    fn entry_link(&self, prev: &Entry) -> String {
+        prev.date_str()
     }
 }

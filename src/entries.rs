@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use crate::config;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Entry {
     text_path: PathBuf,
     pics: Vec<PathBuf>,
@@ -19,7 +19,7 @@ impl Entry {
                     let fname =
                         pathdiff::diff_paths(path.join("pics").join(&fname), config::JOURNAL_PATH)
                             .unwrap();
-                    Some(Path::new("journal").join(fname))
+                    Some(fname)
                 })
                 .collect(),
             Err(_) => vec![],
@@ -60,17 +60,50 @@ impl Entries {
     pub fn read(path: &Path) -> Result<Self> {
         let path = path.to_owned();
         let read_dir = std::fs::read_dir(path.clone())?;
-        let entries: Vec<_> = read_dir
+        let mut entries: Vec<_> = read_dir
             .filter_map(move |e| {
                 let fname = e.unwrap().file_name().to_str().unwrap().to_owned();
                 Some(Entry::read(&path.join(fname)))
             })
             .collect();
+        entries.sort_by_key(|entry| entry.date_str());
         Ok(Self { entries })
     }
 
     pub(crate) fn random(&self) -> Option<&Entry> {
         let mut thread_rng = rand::thread_rng();
         self.entries.choose(&mut thread_rng)
+    }
+
+    pub fn get_by_date(&self, date: String) -> Option<&Entry> {
+        self.entries.iter().find(|entry| entry.date_str() == date)
+    }
+
+    pub fn prev(&self, entry: &Entry) -> Option<&Entry> {
+        let index = self
+            .entries
+            .iter()
+            .enumerate()
+            .find(|(_, e)| *e == entry)
+            .map(|(i, _)| i);
+        index.and_then(|index| {
+            index
+                .checked_sub(1)
+                .and_then(|index| self.entries.get(index))
+        })
+    }
+
+    pub fn next(&self, entry: &Entry) -> Option<&Entry> {
+        let index = self
+            .entries
+            .iter()
+            .enumerate()
+            .find(|(_, e)| *e == entry)
+            .map(|(i, _)| i);
+        index.and_then(|index| {
+            index
+                .checked_add(1)
+                .and_then(|index| self.entries.get(index))
+        })
     }
 }
