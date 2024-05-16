@@ -8,33 +8,38 @@ use crate::config;
 pub struct Entry {
     text_path: PathBuf,
     pics: Vec<PathBuf>,
+    audio: Vec<PathBuf>,
+}
+
+fn get_all_files_in_folder(path: &Path) -> Vec<PathBuf> {
+    match std::fs::read_dir(path) {
+        Ok(entries) => entries
+            .filter_map(move |e| {
+                let fname = e.unwrap().file_name().to_str().unwrap().to_owned();
+                let fname = pathdiff::diff_paths(path.join(&fname), config::JOURNAL_PATH).unwrap();
+                Some(fname)
+            })
+            .collect(),
+        Err(_) => vec![],
+    }
 }
 
 impl Entry {
     fn read(path: &Path) -> Self {
-        let pics = match std::fs::read_dir(path.join("pics")) {
-            Ok(entries) => entries
-                .filter_map(move |e| {
-                    let fname = e.unwrap().file_name().to_str().unwrap().to_owned();
-                    let fname =
-                        pathdiff::diff_paths(path.join("pics").join(&fname), config::JOURNAL_PATH)
-                            .unwrap();
-                    Some(fname)
-                })
-                .collect(),
-            Err(_) => vec![],
-        };
+        let pics = get_all_files_in_folder(&path.join("pics"));
+        let audio = get_all_files_in_folder(&path.join("audio"));
         Self {
             text_path: (path.join("entry.md")).to_owned(),
             pics,
+            audio,
         }
     }
 
-    pub(crate) fn content(&self) -> Result<String> {
+    pub fn content(&self) -> Result<String> {
         std::fs::read_to_string(&self.text_path)
     }
 
-    pub(crate) fn date_str(&self) -> String {
+    pub fn date_str(&self) -> String {
         let filename = self
             .text_path
             .parent()
@@ -48,6 +53,10 @@ impl Entry {
 
     pub fn pics(&self) -> &[PathBuf] {
         self.pics.as_ref()
+    }
+
+    pub fn audio(&self) -> &[PathBuf] {
+        self.audio.as_ref()
     }
 }
 

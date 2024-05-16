@@ -22,6 +22,8 @@ fn main() {
     // Embedding these here for simplicity, so I can just run the binary from anywhere
     tera.add_raw_template("pic.html", include_str!("../templates/pic.html"))
         .unwrap();
+    tera.add_raw_template("audio.html", include_str!("../templates/audio.html"))
+        .unwrap();
     tera.add_raw_template("entry.html", include_str!("../templates/entry.html"))
         .unwrap();
     tera.add_raw_template(
@@ -93,6 +95,7 @@ impl Manager {
         );
         context.insert("date", &entry.date_str());
         context.insert("pics", &self.pics_html(entry));
+        context.insert("audio", &self.audio_html(entry));
         let prev = self.entries.prev(entry);
         let next = self.entries.next(entry);
         context.insert("link_entry", &self.entry_link(entry));
@@ -112,6 +115,23 @@ impl Manager {
                     let mut context = tera::Context::new();
                     context.insert("pic", pic);
                     self.tera.render("pic.html", &context).unwrap()
+                })
+                .collect::<Vec<_>>()
+                .join("\n")
+        }
+    }
+
+    fn audio_html(&self, entry: &Entry) -> String {
+        if entry.audio().is_empty() {
+            "".to_string()
+        } else {
+            entry
+                .audio()
+                .iter()
+                .map(|audio| {
+                    let mut context = tera::Context::new();
+                    context.insert("audio", audio);
+                    self.tera.render("audio.html", &context).unwrap()
                 })
                 .collect::<Vec<_>>()
                 .join("\n")
