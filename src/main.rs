@@ -8,6 +8,7 @@ use crate::entries::Entries;
 use crate::lastfm::LastFmAnalyzer;
 
 mod config;
+mod dump_processor;
 mod entries;
 mod lastfm;
 
@@ -18,6 +19,11 @@ struct Manager {
 }
 
 fn main() {
+    println!("Processing dump folder...");
+    if let Err(e) = dump_processor::process_dump_folder() {
+        eprintln!("Error processing dump folder: {}", e);
+    }
+
     println!("Now listening on localhost:8000");
 
     let entries = Entries::read(&Path::new(config::JOURNAL_PATH)).unwrap();

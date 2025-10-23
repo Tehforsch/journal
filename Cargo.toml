@@ -13,3 +13,5 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tera = "1.19.1"
 chrono = { version = "0.4", features = ["serde"] }
+id3 = "1.0"
+kamadak-exif = "0.5"
