@@ -78,13 +78,32 @@ impl Manager {
             .map(|_| {
                 let random_entry = self.entries.random();
                 random_entry
-                    .map(|entry| self.entry_html(entry))
+                    .map(|entry| self.dashboard_entry_preview(entry))
                     .unwrap_or("".to_owned())
             })
             .collect::<Vec<_>>()
             .join("\n");
         context.insert("entries", &result);
         self.tera.render("dashboard.html", &context).unwrap()
+    }
+
+    fn dashboard_entry_preview(&self, entry: &Entry) -> String {
+        let content = entry.content().unwrap_or_default();
+        let preview = content;
+
+        format!(
+            r#"<div class="entry-preview">
+                <div style="font-weight: 600; color: #4facfe; margin-bottom: 0.5rem;">
+                    <a href="/{}" style="text-decoration: none; color: inherit;">{}</a>
+                </div>
+                <div style="color: #6c757d; line-height: 1.6;">
+                    {}
+                </div>
+            </div>"#,
+            entry.date_str(),
+            entry.date_str(),
+            preview.replace("\n", "<br/>")
+        )
     }
 
     fn entry_html(&self, entry: &Entry) -> String {
