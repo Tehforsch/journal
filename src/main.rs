@@ -5,13 +5,16 @@ use rouille::{router, Response};
 use tera::Tera;
 
 use crate::entries::Entries;
+use crate::lastfm::LastFmAnalyzer;
 
 mod config;
 mod entries;
+mod lastfm;
 
 struct Manager {
     entries: Entries,
     tera: Tera,
+    lastfm: Option<LastFmAnalyzer>,
 }
 
 fn main() {
@@ -32,7 +35,21 @@ fn main() {
     )
     .unwrap();
     tera.autoescape_on(vec![]);
-    let manager = Manager { entries, tera };
+
+    // Try to load LastFm data
+    let lastfm_path = Path::new(config::JOURNAL_PATH).join("lastfmstats-Tehforsch.json");
+    let lastfm = LastFmAnalyzer::load_from_file(&lastfm_path)
+        .map_err(|e| {
+            println!("Warning: Could not load LastFm data: {}", e);
+            e
+        })
+        .ok();
+
+    let manager = Manager {
+        entries,
+        tera,
+        lastfm,
+    };
 
     rouille::start_server("localhost:8000", move |request| {
         {
@@ -115,6 +132,7 @@ impl Manager {
         context.insert("date", &entry.date_str());
         context.insert("pics", &self.pics_html(entry));
         context.insert("audio", &self.audio_html(entry));
+        context.insert("lastfm", &self.lastfm_html(entry));
         let prev = self.entries.prev(entry);
         let next = self.entries.next(entry);
         context.insert("link_entry", &self.entry_link(entry));
@@ -159,5 +177,65 @@ impl Manager {
 
     fn entry_link(&self, prev: &Entry) -> String {
         prev.date_str()
+    }
+
+    fn lastfm_html(&self, entry: &Entry) -> String {
+        if let Some(ref analyzer) = self.lastfm {
+            let date_str = &entry.date_str();
+            let total_scrobbles = analyzer.get_total_scrobbles_for_date(date_str);
+
+            if total_scrobbles == 0 {
+                return String::new();
+            }
+
+            let top_tracks = analyzer.get_top_tracks_for_date(date_str, 5);
+            let top_albums = analyzer.get_top_albums_for_date(date_str, 5);
+
+            let mut html = format!(
+                r#"<div class="lastfm-section">
+                    <h3>Music on {}</h3>
+                    <p class="total-tracks">{} tracks played</p>
+                    
+                    <div class="tabs">
+                        <button class="tab-btn active" onclick="switchTab(event, 'albums')">Top Albums</button>
+                        <button class="tab-btn" onclick="switchTab(event, 'tracks')">Top Tracks</button>
+                    </div>
+                    
+                    <div id="albums" class="tab-content active">"#,
+                date_str, total_scrobbles
+            );
+
+            // Albums tab
+            if !top_albums.is_empty() {
+                html.push_str(r#"<ul class="stats-list">"#);
+                for album in &top_albums {
+                    html.push_str(&format!(
+                        r#"<li><span class="item-name">{}</span><br><span class="artist-name">{}</span> <span class="play-count">({} plays)</span></li>"#,
+                        album.name, album.artist, album.play_count
+                    ));
+                }
+                html.push_str("</ul>");
+            }
+            html.push_str("</div>");
+
+            // Tracks tab
+            html.push_str(r#"<div id="tracks" class="tab-content">"#);
+            if !top_tracks.is_empty() {
+                html.push_str(r#"<ul class="stats-list">"#);
+                for track in &top_tracks {
+                    html.push_str(&format!(
+                        r#"<li><span class="item-name">{}</span><br><span class="artist-name">{}</span> <span class="play-count">({} plays)</span></li>"#,
+                        track.name, track.artist, track.play_count
+                    ));
+                }
+                html.push_str("</ul>");
+            }
+            html.push_str("</div>");
+
+            html.push_str("</div>");
+            html
+        } else {
+            String::new()
+        }
     }
 }

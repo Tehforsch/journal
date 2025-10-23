@@ -9,4 +9,7 @@ edition = "2021"
 pathdiff = "0.2.1"
 rand = "0.8.5"
 rouille = "3.6.2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 tera = "1.19.1"
+chrono = { version = "0.4", features = ["serde"] }

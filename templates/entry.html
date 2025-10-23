@@ -21,12 +21,9 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 1400px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 2rem;
+            padding: 1rem;
         }
 
         .header {
@@ -65,6 +62,18 @@
 
         .content {
             padding: 0;
+            display: flex;
+            gap: 2rem;
+            align-items: flex-start;
+        }
+
+        .main-content {
+            flex: 2;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .entry-content {
@@ -94,6 +103,102 @@
 
         .media-item:hover {
             transform: translateY(-3px);
+        }
+
+        .lastfm-section {
+            flex: 1;
+            min-width: 300px;
+            max-width: 400px;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            height: fit-content;
+            position: sticky;
+            top: 2rem;
+        }
+
+        .lastfm-section h3 {
+            color: #2c3e50;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .total-tracks {
+            color: #6c757d;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            color: #6c757d;
+            font-size: 0.85rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn:hover {
+            color: #2c3e50;
+            background: rgba(79, 172, 254, 0.1);
+        }
+
+        .tab-btn.active {
+            color: #4facfe;
+            border-bottom-color: #4facfe;
+            font-weight: 500;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .stats-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .stats-list li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            color: #2c3e50;
+        }
+
+        .stats-list li:last-child {
+            border-bottom: none;
+        }
+
+        .item-name {
+            font-weight: 500;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .artist-name {
+            color: #6c757d;
+            font-size: 0.85rem;
+        }
+
+        .play-count {
+            color: #6c757d;
+            font-size: 0.8rem;
+            float: right;
         }
 
         .dashboard-link {
@@ -133,7 +238,15 @@
             }
             
             .content {
+                flex-direction: column;
                 padding: 1.5rem;
+                gap: 1rem;
+            }
+            
+            .lastfm-section {
+                max-width: none;
+                min-width: auto;
+                position: static;
             }
             
             .dashboard-link {
@@ -159,26 +272,48 @@
         </div>
         
         <div class="content">
-            <div class="entry-content">
-                {{ content }}
+            <div class="main-content">
+                <div class="entry-content">
+                    {{ content }}
+                </div>
+                
+                {% if pics %}
+                <div class="media-section">
+                    <div class="media-grid">
+                        {{ pics }}
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if audio %}
+                <div class="media-section">
+                    <div class="media-grid">
+                        {{ audio }}
+                    </div>
+                </div>
+                {% endif %}
             </div>
             
-            {% if pics %}
-            <div class="media-section">
-                <div class="media-grid">
-                    {{ pics }}
-                </div>
-            </div>
-            {% endif %}
-            
-            {% if audio %}
-            <div class="media-section">
-                <div class="media-grid">
-                    {{ audio }}
-                </div>
-            </div>
-            {% endif %}
+            {{ lastfm }}
         </div>
     </div>
+    
+    <script>
+        function switchTab(event, tabId) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            // Remove active class from all tab buttons
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // Show selected tab content
+            document.getElementById(tabId).classList.add('active');
+            
+            // Mark clicked button as active
+            event.target.classList.add('active');
+        }
+    </script>
 </body>
 </html>
