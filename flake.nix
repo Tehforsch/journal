@@ -1,28 +1,50 @@
 {
+  description = "Journal / Daily Dashboard";
+
   inputs = {
-    cargo2nix.url = "github:cargo2nix/cargo2nix/release-0.11.0";
-    flake-utils.follows = "cargo2nix/flake-utils";
-    nixpkgs.follows = "cargo2nix/nixpkgs";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    flake-utils.url = "github:numtide/flake-utils";
+    rust-overlay.url = "github:oxalica/rust-overlay";
   };
 
-  outputs = inputs: with inputs;
+  outputs = { self, nixpkgs, flake-utils, rust-overlay }:
     flake-utils.lib.eachDefaultSystem (system:
       let
+        overlays = [ (import rust-overlay) ];
         pkgs = import nixpkgs {
-          inherit system;
-          overlays = [cargo2nix.overlays.default];
+          inherit system overlays;
+        };
+        
+        rustToolchain = pkgs.rust-bin.stable.latest.default.override {
+          extensions = [ "rust-src" ];
         };
 
-        rustPkgs = pkgs.rustBuilder.makePackageSet {
-          rustVersion = "1.75.0";
-          packageFun = import ./Cargo.nix;
-        };
+        buildInputs = with pkgs; [
+          rustToolchain
+        ];
 
-      in rec {
-        packages = {
-          journal = (rustPkgs.workspace.journal {});
-          default = packages.journal;
+        nativeBuildInputs = with pkgs; [
+          pkg-config
+        ];
+      in
+      {
+        packages.default = pkgs.rustPlatform.buildRustPackage {
+          pname = "journal";
+          version = "0.1.0";
+          
+          src = ./.;
+          
+          cargoLock = {
+            lockFile = ./Cargo.lock;
+          };
+
+          inherit buildInputs nativeBuildInputs;
+
+          meta = with pkgs.lib; {
+            description = "Journal / Daily Dashboard";
+            license = licenses.mit;
+            maintainers = [ ];
+          };
         };
-      }
-    );
+      });
 }
