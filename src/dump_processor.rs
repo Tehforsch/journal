@@ -130,7 +130,7 @@ fn move_file_to_date_folder(
 
         let entry_md_path = date_folder.join("entry.md");
         if !entry_md_path.exists() {
-            fs::write(&entry_md_path, format!("# {}\n\n", date_str))?;
+            fs::write(&entry_md_path, "".to_string())?;
         }
     }
 
