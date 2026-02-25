@@ -15,3 +15,14 @@ tera = "1.19.1"
 chrono = { version = "0.4", features = ["serde"] }
 id3 = "1.0"
 kamadak-exif = "0.5"
+crossterm = "0.28"
+viuer = "0.8"
+image = "0.25"
+
+[[bin]]
+name = "journal"
+path = "src/main.rs"
+
+[[bin]]
+name = "dump-sort"
+path = "src/bin/dump_sort.rs"

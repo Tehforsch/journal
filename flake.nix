@@ -31,9 +31,9 @@
         packages.default = pkgs.rustPlatform.buildRustPackage {
           pname = "journal";
           version = "0.1.0";
-          
+
           src = ./.;
-          
+
           cargoLock = {
             lockFile = ./Cargo.lock;
           };
@@ -42,6 +42,27 @@
 
           meta = with pkgs.lib; {
             description = "Journal / Daily Dashboard";
+            license = licenses.mit;
+            maintainers = [ ];
+          };
+        };
+
+        packages.dump-sort = pkgs.rustPlatform.buildRustPackage {
+          pname = "dump-sort";
+          version = "0.1.0";
+
+          src = ./.;
+
+          cargoLock = {
+            lockFile = ./Cargo.lock;
+          };
+
+          cargoBuildFlags = [ "--bin" "dump-sort" ];
+
+          inherit buildInputs nativeBuildInputs;
+
+          meta = with pkgs.lib; {
+            description = "Dump file sorter for journal";
             license = licenses.mit;
             maintainers = [ ];
           };
